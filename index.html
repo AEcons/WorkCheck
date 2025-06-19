@@ -6,37 +6,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background: #f9f9f9; }
-    .item, .project-block { background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
-    label { font-weight: bold; display: block; margin-top: 10px; }
-    input[type="text"], select { width: 100%; padding: 8px; margin-top: 5px; }
-    input[type="file"] { margin-top: 5px; }
-    img { max-width: 100%; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    button { margin: 10px 5px 0 0; padding: 10px 15px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      margin: 0 auto;
+      background: #f9f9f9;
+    }
+    .container {
+      max-width: 800px;
+      margin: auto;
+    }
+    .item, .project-block {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-sizing: border-box;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+    input[type="text"], select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
+    }
+    input[type="file"] {
+      margin-top: 5px;
+    }
+    img {
+      width: 100%;
+      max-height: 300px;
+      object-fit: contain;
+      margin-top: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    button {
+      margin: 10px 5px 0 0;
+      padding: 10px 15px;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+
+    @media screen and (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      img {
+        max-height: 200px;
+      }
+    }
   </style>
 </head>
 <body>
 
-<h2>🏗️ แอพ AE ตรวจงาน</h2>
+<div class="container">
+  <h2>🏗️ แอพ AE ตรวจงาน</h2>
 
-<div class="project-block">
-  <label>ชื่อโครงการ:</label>
-  <input type="text" id="projectName" placeholder="เช่น โครงการ A, B, C" />
+  <div class="project-block">
+    <label>ชื่อโครงการ:</label>
+    <input type="text" id="projectName" placeholder="เช่น โครงการ A, B, C" />
 
-  <label>ตำแหน่งโครงการ (Latitude, Longitude):</label>
-  <input type="text" id="projectLatLng" placeholder="เช่น 13.7563, 100.5018" />
+    <label>ตำแหน่งโครงการ (Latitude, Longitude):</label>
+    <input type="text" id="projectLatLng" placeholder="เช่น 13.7563, 100.5018" />
+  </div>
+
+  <div id="items"></div>
+  <button onclick="addItem()">➕ เพิ่มรายการ</button>
+  <button onclick="saveAll()">💾 บันทึกทั้งหมด</button>
+  <button onclick="loadSaved()">📂 แสดงข้อมูลเดิม</button>
+  <button onclick="exportToExcel()">📤 ส่งออก Excel</button>
+
+  <hr>
+  <h3>📋 ข้อมูลที่บันทึกไว้</h3>
+  <div id="saved"></div>
 </div>
-
-<div id="items"></div>
-<button onclick="addItem()">➕ เพิ่มรายการ</button>
-<button onclick="saveAll()">💾 บันทึกทั้งหมด</button>
-<button onclick="loadSaved()">📂 แสดงข้อมูลเดิม</button>
-<button onclick="exportToExcel()">📤 ส่งออก Excel</button>
-
-<hr>
-<h3>📋 ข้อมูลที่บันทึกไว้</h3>
-<div id="saved"></div>
 
 <script>
 let itemIndex = 0;
