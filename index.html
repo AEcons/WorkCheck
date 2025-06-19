@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>AE ตรวจงาน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 700px; margin: auto; background: #f9f9f9; }
+    .item, .project-block { background: white; border: 1px solid #ccc; padding: 15px; margin-bottom: 15px; border-radius: 10px; }
+    label { font-weight: bold; display: block; margin-top: 10px; }
+    input[type="text"], select { width: 100%; padding: 8px; margin-top: 5px; }
+    input[type="file"] { margin-top: 5px; }
+    img { max-width: 100%; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    button { margin: 10px 5px 0 0; padding: 10px 15px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+
+<h2>🏗️ แอพ AE ตรวจงาน</h2>
+
+<div class="project-block">
+  <label>ชื่อโครงการ:</label>
+  <input type="text" id="projectName" placeholder="เช่น โครงการ A, B, C" />
+
+  <label>ตำแหน่งโครงการ (Latitude, Longitude):</label>
+  <input type="text" id="projectLatLng" placeholder="เช่น 13.7563, 100.5018" />
+</div>
+
+<div id="items"></div>
+<button onclick="addItem()">➕ เพิ่มรายการ</button>
+<button onclick="saveAll()">💾 บันทึกทั้งหมด</button>
+<button onclick="loadSaved()">📂 แสดงข้อมูลเดิม</button>
+<button onclick="exportToExcel()">📤 ส่งออก Excel</button>
+
+<hr>
+<h3>📋 ข้อมูลที่บันทึกไว้</h3>
+<div id="saved"></div>
+
+<script>
+let itemIndex = 0;
+
+function addItem(detail = '', beforeImg = '', afterImg = '') {
+  const div = document.createElement('div');
+  div.className = 'item';
+  div.innerHTML = `
+    <label>รายละเอียดงาน:</label>
+    <input type="text" value="${detail}" name="desc${itemIndex}" />
+
+    <label>รูปก่อนทำ:</label>
+    <input type="file" accept="image/*" onchange="previewImage(this, 'before${itemIndex}')" />
+    <img id="before${itemIndex}" src="${beforeImg}" />
+
+    <label>รูปหลังทำ:</label>
+    <input type="file" accept="image/*" onchange="previewImage(this, 'after${itemIndex}')" />
+    <img id="after${itemIndex}" src="${afterImg}" />
+  `;
+  document.getElementById('items').appendChild(div);
+  itemIndex++;
+}
+
+function previewImage(input, imgId) {
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    document.getElementById(imgId).src = e.target.result;
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function saveAll() {
+  const project = document.getElementById('projectName').value.trim();
+  const latlng = document.getElementById('projectLatLng').value.trim();
+  if (!project) return alert('❗ กรุณากรอกชื่อโครงการ');
+
+  const data = [];
+  const items = document.querySelectorAll('.item');
+  items.forEach((item) => {
+    const desc = item.querySelector('input[type=text]').value;
+    const before = item.querySelectorAll('img')[0].src;
+    const after = item.querySelectorAll('img')[1].src;
+    data.push({ desc, before, after });
+  });
+
+  const allData = JSON.parse(localStorage.getItem('inspectionProjects') || '{}');
+  allData[project] = {
+    location: latlng,
+    records: data
+  };
+  localStorage.setItem('inspectionProjects', JSON.stringify(allData));
+  alert('✅ บันทึกโครงการเรียบร้อยแล้ว');
+}
+
+function loadSaved() {
+  const saved = JSON.parse(localStorage.getItem('inspectionProjects') || '{}');
+  const container = document.getElementById('saved');
+  container.innerHTML = '';
+  Object.keys(saved).forEach((project) => {
+    const block = document.createElement('div');
+    block.className = 'project-block';
+    block.innerHTML = `<h4>📌 ${project} (${saved[project].location})</h4>`;
+    saved[project].records.forEach((item, i) => {
+      block.innerHTML += `
+        <div class="item">
+          <p><b>รายละเอียด:</b> ${item.desc}</p>
+          <p><b>ก่อนทำ:</b><br><img src="${item.before}" /></p>
+          <p><b>หลังทำ:</b><br><img src="${item.after}" /></p>
+        </div>
+      `;
+    });
+    container.appendChild(block);
+  });
+}
+
+function exportToExcel() {
+  const saved = JSON.parse(localStorage.getItem('inspectionProjects') || '{}');
+  if (Object.keys(saved).length === 0) {
+    alert('⚠️ ยังไม่มีข้อมูลที่บันทึกไว้');
+    return;
+  }
+
+  const excelData = [];
+  Object.keys(saved).forEach((project) => {
+    const location = saved[project].location;
+    saved[project].records.forEach((item, i) => {
+      excelData.push({
+        'โครงการ': project,
+        'ตำแหน่ง': location,
+        'ลำดับ': i + 1,
+        'รายละเอียด': item.desc,
+        'รูปก่อนทำ (Base64)': item.before,
+        'รูปหลังทำ (Base64)': item.after,
+      });
+    });
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "งานตรวจสอบทั้งหมด");
+
+  XLSX.writeFile(workbook, "โครงการตรวจงาน.xlsx");
+}
+</script>
+
+</body>
+</html>
