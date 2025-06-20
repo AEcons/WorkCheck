@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>รายละเอียดการตรวจงาน</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <main class="report-detail">
+    <img src="logo.png" alt="โลโก้บริษัท" class="logo-print"/>
+    <h1>รายละเอียดการตรวจงาน</h1>
+    <p><strong>โครงการ:</strong> <span id="projectName"></span></p>
+    <p><strong>เลขแปลง:</strong> <span id="plotNumber"></span></p>
+
+    <div id="detailContainer"></div>
+
+    <div class="buttons no-print">
+      <button onclick="window.print()">พิมพ์รายงาน</button>
+      <button onclick="window.location.href='index.html'">กลับหน้าหลัก</button>
+    </div>
+  </main>
+
+  <script>
+    function renderDetail() {
+      const url = new URLSearchParams(window.location.search);
+      const project = url.get("project");
+      const plot = url.get("plot");
+      const key = `${project}_${plot}`;
+
+      document.getElementById("projectName").textContent = project;
+      document.getElementById("plotNumber").textContent = plot;
+
+      const data = JSON.parse(localStorage.getItem(key) || "[]");
+      const container = document.getElementById("detailContainer");
+
+      if (data.length === 0) {
+        container.innerHTML = "<p>ไม่พบข้อมูล</p>";
+        return;
+      }
+
+      data.forEach((rec, index) => {
+        const section = document.createElement("section");
+        section.className = "detail-item";
+        section.innerHTML = `
+          <h3>รายการที่ ${index + 1}</h3>
+          <p><strong>วันที่เริ่ม:</strong> ${rec.startDate}</p>
+          <p><strong>วันที่เสร็จ:</strong> ${rec.endDate}</p>
+          <p><strong>รายละเอียด:</strong> ${rec.item}</p>
+          <p><strong>สถานะ:</strong> ${rec.status}</p>
+          <div class="photo-grid">
+            <img src="${rec.before1}" alt="ก่อนทำ 1"/>
+            <img src="${rec.before2}" alt="ก่อนทำ 2"/>
+            <img src="${rec.after1}" alt="หลังทำ 1"/>
+            <img src="${rec.after2}" alt="หลังทำ 2"/>
+          </div>
+          <hr/>
+        `;
+        container.appendChild(section);
+      });
+    }
+
+    renderDetail();
+  </script>
+</body>
+</html>
